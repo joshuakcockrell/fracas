@@ -3,37 +3,38 @@ from PySide import QtCore, QtGui
 
 class Grapher(QtGui.QWidget):
     def __init__(self, parent = None):
-        super(Grapher, self).__init__()
+        super(Grapher, self).__init__() #hey dude
         print "Center Widget Launched"
-        
+		
         self.generate = False
         self.colorb = QtCore.Qt.black
         self.color1 = QtCore.Qt.white
         self.color2 = QtCore.Qt.darkGray
         self.font = QtGui.QFont("Arial", 30, 100)
-        self.qp = QtGui.QPainter()
+        self.painter = QtGui.QPainter() # painter!
         
     def generateMandelbrot(self):
+	
         self.generate = True
         self.update()
         print "Generating Fractal"
     
     def paintEvent(self, event):
-        self.qp.begin(self)
+        self.painter.begin(self)
         
-        self.qp.setPen(self.color1)
-        self.qp.setBrush(self.color2)
-        self.qp.setFont(self.font)
+        self.painter.setPen(self.color1)
+        self.painter.setBrush(self.color2)
+        self.painter.setFont(self.font)
         
-        self.qp.fillRect(self.rect(), self.colorb)
+        self.painter.fillRect(self.rect(), self.colorb)
         
         if not self.generate:
-            self.qp.drawText(self.rect(), QtCore.Qt.AlignCenter, "Ready to generate Mandelbrot")
+            self.painter.drawText(self.rect(), QtCore.Qt.AlignCenter, "Ready to generate Mandelbrot")
         
         if self.generate:
-            self.qp.drawText(self.rect(), QtCore.Qt.AlignCenter, "Waalaa")
+            self.painter.drawText(self.rect(), QtCore.Qt.AlignCenter, "Waalaa")
         
-        self.qp.end()
+        self.painter.end()
         
     def mousePressEvent(self, event):
         self.generateMandelbrot()
@@ -41,19 +42,20 @@ class Grapher(QtGui.QWidget):
 class Window(QtGui.QMainWindow):
     def __init__(self):
         super(Window, self).__init__()
-        self.setFixedSize(800, 600)
-        self.setWindowTitle("fracas")
-        self.grapher = Grapher(self)
-        self.setCentralWidget(self.grapher)
+        self.setFixedSize(800, 600) # size
+        self.setWindowTitle("fracas") # title
+        self.grapher = Grapher(self) # making our grapher
+        self.setCentralWidget(self.grapher) # SOMETHING
         self.createActions()
         self.createMenus()
     
     def createActions(self):
-        self.genAct = QtGui.QAction("&Generate", self)
-        self.genAct.triggered.connect(self.grapher.generateMandelbrot)
+        self.genAct = QtGui.QAction("&Generate", self) # creating an action
+        self.genAct.triggered.connect(self.grapher.generateMandelbrot) # say what the action does
+		
     def createMenus(self):
-        self.fileMenu = self.menuBar().addMenu("&File")
-        self.fileMenu.addAction(self.genAct)
+        self.fileMenu = self.menuBar().addMenu("&File") # make the file menu
+        self.fileMenu.addAction(self.genAct) # add our generate action to the file menu
         
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
