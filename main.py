@@ -77,7 +77,7 @@ class Grapher(QtGui.QWidget):
                         slice = self.iteration * 0.5
                         if i < slice:
                             color = 255 * i / slice 
-                            self.painter.setPen(QtGui.QColor(color, 0, 0))
+                            self.painter.setPen(QtGui.QColor(color * -1, color / 2, 255))
                         else:
                             color = 255 * (i - slice)/(self.iteration - slice)
                             self.painter.setPen(QtGui.QColor(255, color, color))
