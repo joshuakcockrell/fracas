@@ -1,4 +1,5 @@
 import sys
+
 from PySide import QtCore, QtGui
 
 class Grapher(QtGui.QWidget):
