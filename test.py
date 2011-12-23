@@ -1,18 +1,41 @@
-class Hi():
+import sys
+from PySide import QtGui, QtCore
+
+class Example(QtGui.QMainWindow):
+    
     def __init__(self):
-        self.garbage = 10
+        super(Example, self).__init__()
+        
+        self.initUI()
+        
+    def initUI(self):      
 
-    def get_some_garbage(self):
-        return self.garbage
+        btn1 = QtGui.QPushButton("Button 1", self)
+        btn1.move(30, 50)
 
-class Soup(Hi):
-    def __init__(self):
-        Hi.__init__(self)
+        btn2 = QtGui.QPushButton("Button 2", self)
+        btn2.move(150, 50)
+      
+        btn1.clicked.connect(self.buttonClicked)            
+        btn2.clicked.connect(self.buttonClicked)
+        
+        self.statusBar()
+        
+        self.setGeometry(300, 300, 290, 150)
+        self.setWindowTitle('Event sender')
+        self.show()
+        
+    def buttonClicked(self):
+      
+        sender = self.sender()
+        self.statusBar().showMessage(sender.text() + ' was pressed')
+        
+def main():
+    
+    app = QtGui.QApplication(sys.argv)
+    ex = Example()
+    sys.exit(app.exec_())
 
 
-soup = Soup()
-
-print soup.__dict__.keys()
-for k in soup.__dict__.keys():
-    print str(k) + ' :' + str(soup.__dict__[k])
-print dir(soup)
+if __name__ == '__main__':
+    main()
