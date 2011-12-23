@@ -7,12 +7,6 @@ class Grapher(QtGui.QWidget):
         super(Grapher, self).__init__()
         
         self.generate = False
-        self.menu = True
-        self.colorb = QtCore.Qt.white
-        self.color1 = QtCore.Qt.black
-        self.fractColor = QtCore.Qt.darkGray
-        self.font = QtGui.QFont("Arial", 30, 100)
-        self.painter = QtGui.QPainter()
 
         self.black_color = (0, 0, 0)
         self.white_color = (255, 255, 255)
@@ -23,13 +17,13 @@ class Grapher(QtGui.QWidget):
         self.blue_color = (0, 0, 255)
         self.purple_color = (255, 0, 255)
 
-        self.starting_color = self.blue_color
-        self.mid_color = self.green_color
+        self.starting_color = self.black_color
+        self.mid_color = self.red_color
+        self.ending_color = self.white_color
         self.mid_color_difference = (self.mid_color[0] - self.starting_color[0],
                                      self.mid_color[1] - self.starting_color[1],
                                      self.mid_color[2] - self.starting_color[2])
         
-        self.ending_color = self.red_color
         self.end_color_difference = (self.ending_color[0] - self.mid_color[0],
                                      self.ending_color[1] - self.mid_color[1],
                                      self.ending_color[2] - self.mid_color[2])
@@ -44,7 +38,7 @@ class Grapher(QtGui.QWidget):
         self.comp_y_min = -1.2
         
         # The number of iterations to run through the mandelbrot algorithm.
-        self.iteration = 30
+        self.iteration = 100
 
     def set_starting_color(self, color):
         if color == 'Black':
@@ -90,25 +84,56 @@ class Grapher(QtGui.QWidget):
         self.end_color_difference = (self.ending_color[0] - self.mid_color[0],
                                      self.ending_color[1] - self.mid_color[1],
                                      self.ending_color[2] - self.mid_color[2])
-
-    def generateMandelbrot(self):
-        self.generate = True
-        self.update()
-
-    def set_color(self, color_percent, destination_color):
+                                     
+    def set_color(self, color_percent, destination_color, painter):
 
         if destination_color == 'mid':
             red_value = int((self.mid_color_difference[0] * color_percent) + self.starting_color[0])
             green_value = int((self.mid_color_difference[1] * color_percent) + self.starting_color[1])
             blue_value = int((self.mid_color_difference[2] * color_percent) + self.starting_color[2])
-            self.painter.setPen(QtGui.QColor(red_value, green_value, blue_value))
+            painter.setPen(QtGui.QColor(red_value, green_value, blue_value))
 
         elif destination_color == 'end':
             red_value = int((self.end_color_difference[0] * color_percent) + self.mid_color[0])
             green_value = int((self.end_color_difference[1] * color_percent) + self.mid_color[1])
             blue_value = int((self.end_color_difference[2] * color_percent) + self.mid_color[2])
-            self.painter.setPen(QtGui.QColor(red_value, green_value, blue_value))
-        
+            painter.setPen(QtGui.QColor(red_value, green_value, blue_value))
+
+    def generateMandelbrot(self):
+        self.image = QtGui.QImage(self.size(), QtGui.QImage.Format_RGB32)
+        painter = QtGui.QPainter(self.image)
+        self.comp_y_max = self.comp_y_min + float(self.comp_x_max - self.comp_x_min) * self.height() / self.width()
+        # Part of the linear interpolation formula generated here to save processing time.
+        self.real_lerp = float(self.comp_x_max - self.comp_x_min)/self.width()
+        self.img_lerp = float(self.comp_y_max - self.comp_y_min)/self.height()
+        print "Generating Fractal..."
+        for x in range(self.width()):
+            for y in range(self.height()):
+                i = self.point_is_in_set(x, y)
+                if i == self.iteration: # if the point remained bounded for every iteration
+                    painter.setPen(QtCore.Qt.black)
+                
+                # Escape-time coloring.
+                # Color goes from black to {color} for the first slice of the iterations
+                # Color goes from {color} to white for the second slice of the iterations
+                else:
+                    slice = self.iteration * 0.5
+                    if i < slice:
+                        color_percent = float(i) / slice
+                        destination_color = 'mid'
+                        self.set_color(color_percent, destination_color, painter)
+                    else:
+                        color_percent = (i - slice)/(self.iteration - slice)
+                        destination_color = 'end'
+                        self.set_color(color_percent, destination_color, painter)
+                painter.drawPoint(x, y)
+            if x % 100 == 0: #temporary loading indicator
+                loading = "{0}%".format(int(round(float(x) / self.width() * 100)))
+                print loading
+        self.generate = True
+        print "Done!"
+        self.update()
+    
     # Mandelbrot algorithm that checks whether a certain point is in the set
     def point_is_in_set(self, x, y):
         # Linear interpolation that interpolates the window's pixel coordinate point
@@ -130,52 +155,15 @@ class Grapher(QtGui.QWidget):
         return i
     
     def paintEvent(self, event):
-        #TODO: Paint to a QPixmap or QImage instead of directly to the widget.
-        self.painter.begin(self)
-        
-        self.painter.setPen(self.color1)
-        self.painter.setFont(self.font)
-        
+        painter = QtGui.QPainter(self)
         if self.generate:
-            # Generates the last view-window bound.
-            self.comp_y_max = self.comp_y_min + float(self.comp_x_max - self.comp_x_min) * self.height() / self.width()
-            
-            # Part of the linear interpolation formula generated here to save processing time.
-            self.real_lerp = float(self.comp_x_max - self.comp_x_min)/self.width()
-            self.img_lerp = float(self.comp_y_max - self.comp_y_min)/self.height()
-            print "Generating Fractal..."
-            for x in range(self.width()):
-                for y in range(self.height()):
-                    i = self.point_is_in_set(x, y)
-                    if i == self.iteration: # if the point remained bounded for every iteration
-                        self.painter.setPen(self.color1) # black
-                    
-                    # Escape-time coloring.
-                    # Color goes from black to {color} for the first slice of the iterations
-                    # Color goes from {color} to white for the second slice of the iterations
-                    else:
-                        slice = self.iteration * 0.5
-                        if i < slice:
-                            color_percent = float(i) / slice
-                            destination_color = 'mid'
-                            self.set_color(color_percent, destination_color)
-                        else:
-                            color_percent = (i - slice)/(self.iteration - slice)
-                            destination_color = 'end'
-                            self.set_color(color_percent, destination_color)
-                    self.painter.drawPoint(x, y)
-                if x % 80 == 0: #temporary loading indicator
-                    loading = "{0}%".format(int(round(float(x) / self.width() * 100)))
-                    print loading
-            self.generate = False
-            self.menu = False
-            print "Done!"
+            painter.drawImage(QtCore.QPoint(0, 0), self.image)
         
-        elif self.menu:
-            self.painter.fillRect(self.rect(), self.colorb)
-            self.painter.drawText(self.rect(), QtCore.Qt.AlignCenter, "Ready to generate Mandelbrot")    
-        
-        self.painter.end()
+        else:
+            painter.setPen(QtCore.Qt.white)
+            painter.setFont(QtGui.QFont("Arial", 30, 100))
+            painter.fillRect(self.rect(), QtCore.Qt.black)
+            painter.drawText(self.rect(), QtCore.Qt.AlignCenter, "Ready to generate Mandelbrot")    
 
 class Window(QtGui.QMainWindow):
     def __init__(self):
