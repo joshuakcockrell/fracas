@@ -24,10 +24,16 @@ class Grapher(QtGui.QWidget):
         self.purple_color = (255, 0, 255)
 
         self.starting_color = self.blue_color
+        self.mid_color = self.green_color
+        self.mid_color_difference = (self.mid_color[0] - self.starting_color[0],
+                                     self.mid_color[1] - self.starting_color[1],
+                                     self.mid_color[2] - self.starting_color[2])
+        
         self.ending_color = self.red_color
-        self.color_difference = (self.ending_color[0] - self.starting_color[0],
-                                 self.ending_color[1] - self.starting_color[1],
-                                 self.ending_color[2] - self.starting_color[2])
+        self.end_color_difference = (self.ending_color[0] - self.mid_color[0],
+                                     self.ending_color[1] - self.mid_color[1],
+                                     self.ending_color[2] - self.mid_color[2])
+
                                     
         
         # The bounds of the complex plane that is being viewed.
@@ -47,52 +53,61 @@ class Grapher(QtGui.QWidget):
             self.starting_color = self.white_color
         elif color == 'Red':
             self.starting_color = self.red_color
-        elif color == 'Yellow':
-            self.starting_color = self.yellow_color
-        elif color == 'Green':
-            self.starting_color = self.green_color
-        elif color == 'Light Blue':
-            self.starting_color = self.light_blue_color
         elif color == 'Blue':
             self.starting_color = self.blue_color
-        elif color == 'Purple':
-            self.starting_color = self.purple_color
 
-        self.color_difference = (self.ending_color[0] - self.starting_color[0],
-                                 self.ending_color[1] - self.starting_color[1],
-                                 self.ending_color[2] - self.starting_color[2])
+        self.mid_color_difference = (self.mid_color[0] - self.starting_color[0],
+                                     self.mid_color[1] - self.starting_color[1],
+                                     self.mid_color[2] - self.starting_color[2])
 
+    def set_mid_color(self, color):
+        if color == 'Black':
+            self.mid_color = self.black_color
+        elif color == 'White':
+            self.mid_color = self.white_color
+        elif color == 'Red':
+            self.mid_color = self.red_color
+        elif color == 'Blue':
+            self.mid_color = self.blue_color
+
+        self.mid_color_difference = (self.mid_color[0] - self.starting_color[0],
+                                     self.mid_color[1] - self.starting_color[1],
+                                     self.mid_color[2] - self.starting_color[2])
+
+        self.end_color_difference = (self.ending_color[0] - self.mid_color[0],
+                                     self.ending_color[1] - self.mid_color[1],
+                                     self.ending_color[2] - self.mid_color[2])
     def set_ending_color(self, color):
         if color == 'Black':
-            self.starting_color = self.black_color
+            self.ending_color = self.black_color
         elif color == 'White':
-            self.starting_color = self.white_color
+            self.ending_color = self.white_color
         elif color == 'Red':
-            self.starting_color = self.red_color
-        elif color == 'Yellow':
-            self.starting_color = self.yellow_color
-        elif color == 'Green':
-            self.starting_color = self.green_color
-        elif color == 'Light Blue':
-            self.starting_color = self.light_blue_color
+            self.ending_color = self.red_color
         elif color == 'Blue':
-            self.starting_color = self.blue_color
-        elif color == 'Purple':
-            self.starting_color = self.purple_color
+            self.ending_color = self.blue_color
 
-        self.color_difference = (self.ending_color[0] - self.starting_color[0],
-                                 self.ending_color[1] - self.starting_color[1],
-                                 self.ending_color[2] - self.starting_color[2])
+        self.end_color_difference = (self.ending_color[0] - self.mid_color[0],
+                                     self.ending_color[1] - self.mid_color[1],
+                                     self.ending_color[2] - self.mid_color[2])
 
     def generateMandelbrot(self):
         self.generate = True
         self.update()
 
-    def set_color(self, color_percent):
-        red_value = int((self.color_difference[0] * color_percent) + self.starting_color[0])
-        green_value = int((self.color_difference[1] * color_percent) + self.starting_color[1])
-        blue_value = int((self.color_difference[2] * color_percent) + self.starting_color[2])
-        self.painter.setPen(QtGui.QColor(red_value, green_value, blue_value))
+    def set_color(self, color_percent, destination_color):
+
+        if destination_color == 'mid':
+            red_value = int((self.mid_color_difference[0] * color_percent) + self.starting_color[0])
+            green_value = int((self.mid_color_difference[1] * color_percent) + self.starting_color[1])
+            blue_value = int((self.mid_color_difference[2] * color_percent) + self.starting_color[2])
+            self.painter.setPen(QtGui.QColor(red_value, green_value, blue_value))
+
+        elif destination_color == 'end':
+            red_value = int((self.end_color_difference[0] * color_percent) + self.mid_color[0])
+            green_value = int((self.end_color_difference[1] * color_percent) + self.mid_color[1])
+            blue_value = int((self.end_color_difference[2] * color_percent) + self.mid_color[2])
+            self.painter.setPen(QtGui.QColor(red_value, green_value, blue_value))
         
     # Mandelbrot algorithm that checks whether a certain point is in the set
     def point_is_in_set(self, x, y):
@@ -142,10 +157,12 @@ class Grapher(QtGui.QWidget):
                         slice = self.iteration * 0.5
                         if i < slice:
                             color_percent = float(i) / slice
-                            self.set_color(color_percent)
+                            destination_color = 'mid'
+                            self.set_color(color_percent, destination_color)
                         else:
                             color_percent = (i - slice)/(self.iteration - slice)
-                            self.set_color(color_percent)
+                            destination_color = 'end'
+                            self.set_color(color_percent, destination_color)
                     self.painter.drawPoint(x, y)
                 if x % 80 == 0: #temporary loading indicator
                     loading = "{0}%".format(int(round(float(x) / self.width() * 100)))
@@ -174,6 +191,10 @@ class Window(QtGui.QMainWindow):
         text = self.sender().text()
         self.grapher.set_starting_color(text)
 
+    def set_mid_color(self):
+        text = self.sender().text()
+        self.grapher.set_mid_color(text)
+
     def set_ending_color(self):
         text = self.sender().text()
         self.grapher.set_ending_color(text)
@@ -188,17 +209,17 @@ class Window(QtGui.QMainWindow):
         self.start_white.triggered.connect(self.set_starting_color)
         self.start_red = QtGui.QAction('Red', self)
         self.start_red.triggered.connect(self.set_starting_color)
-        self.start_yellow = QtGui.QAction('Yellow', self)
-        self.start_yellow.triggered.connect(self.set_starting_color)
-        self.start_green = QtGui.QAction('Green', self)
-        self.start_green.triggered.connect(self.set_starting_color)
-        self.start_light_blue = QtGui.QAction('Light Blue', self)
-        self.start_light_blue.triggered.connect(self.set_starting_color)
         self.start_blue = QtGui.QAction('Blue', self)
         self.start_blue.triggered.connect(self.set_starting_color)
-        self.start_purple = QtGui.QAction('Purple', self)
-        self.start_purple.triggered.connect(self.set_starting_color)
 
+        self.mid_black = QtGui.QAction('Black', self)
+        self.mid_black.triggered.connect(self.set_mid_color)
+        self.mid_white = QtGui.QAction('White', self)
+        self.mid_white.triggered.connect(self.set_mid_color)
+        self.mid_red = QtGui.QAction('Red', self)
+        self.mid_red.triggered.connect(self.set_mid_color)
+        self.mid_blue = QtGui.QAction('Blue', self)
+        self.mid_blue.triggered.connect(self.set_mid_color)
 
         self.end_black = QtGui.QAction('Black', self)
         self.end_black.triggered.connect(self.set_ending_color)
@@ -206,16 +227,8 @@ class Window(QtGui.QMainWindow):
         self.end_white.triggered.connect(self.set_ending_color)
         self.end_red = QtGui.QAction('Red', self)
         self.end_red.triggered.connect(self.set_ending_color)
-        self.end_yellow = QtGui.QAction('Yellow', self)
-        self.end_yellow.triggered.connect(self.set_ending_color)
-        self.end_green = QtGui.QAction('Green', self)
-        self.end_green.triggered.connect(self.set_ending_color)
-        self.end_light_blue = QtGui.QAction('Light Blue', self)
-        self.end_light_blue.triggered.connect(self.set_ending_color)
         self.end_blue = QtGui.QAction('Blue', self)
         self.end_blue.triggered.connect(self.set_ending_color)
-        self.end_purple = QtGui.QAction('Purple', self)
-        self.end_purple.triggered.connect(self.set_ending_color)
 
         
     def createMenus(self):
@@ -227,22 +240,22 @@ class Window(QtGui.QMainWindow):
         self.start_color_menu.addAction(self.start_black)
         self.start_color_menu.addAction(self.start_white)
         self.start_color_menu.addAction(self.start_red)
-        self.start_color_menu.addAction(self.start_yellow)
-        self.start_color_menu.addAction(self.start_green)
-        self.start_color_menu.addAction(self.start_light_blue)
         self.start_color_menu.addAction(self.start_blue)
-        self.start_color_menu.addAction(self.start_purple)
+
+        self.mid_color_menu = self.menuBar().addMenu('Middle Color')
+        self.mid_color_menu.addAction(self.mid_black)
+        self.mid_color_menu.addAction(self.mid_white)
+        self.mid_color_menu.addAction(self.mid_red)
+        self.mid_color_menu.addAction(self.mid_blue)
 
         self.end_color_menu = self.menuBar().addMenu('Ending Color')
 
         self.end_color_menu.addAction(self.end_black)
         self.end_color_menu.addAction(self.end_white)
         self.end_color_menu.addAction(self.end_red)
-        self.end_color_menu.addAction(self.end_yellow)
-        self.end_color_menu.addAction(self.end_green)
-        self.end_color_menu.addAction(self.end_light_blue)
         self.end_color_menu.addAction(self.end_blue)
-        self.end_color_menu.addAction(self.end_purple)
+
+        
         
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
