@@ -38,9 +38,31 @@ class Grapher(QtGui.QWidget):
         self.comp_y_min = -1.2
         
         # The number of iterations to run through the mandelbrot algorithm.
-        self.iteration = 100
+        self.iteration = 30
 
     def set_starting_color(self, color):
+        if color == 'Black':
+            self.starting_color = self.black_color
+        elif color == 'White':
+            self.starting_color = self.white_color
+        elif color == 'Red':
+            self.starting_color = self.red_color
+        elif color == 'Yellow':
+            self.starting_color = self.yellow_color
+        elif color == 'Green':
+            self.starting_color = self.green_color
+        elif color == 'Light Blue':
+            self.starting_color = self.light_blue_color
+        elif color == 'Blue':
+            self.starting_color = self.blue_color
+        elif color == 'Purple':
+            self.starting_color = self.purple_color
+
+        self.color_difference = (self.ending_color[0] - self.starting_color[0],
+                                 self.ending_color[1] - self.starting_color[1],
+                                 self.ending_color[2] - self.starting_color[2])
+
+    def set_ending_color(self, color):
         if color == 'Black':
             self.starting_color = self.black_color
         elif color == 'White':
@@ -151,6 +173,10 @@ class Window(QtGui.QMainWindow):
     def set_starting_color(self):
         text = self.sender().text()
         self.grapher.set_starting_color(text)
+
+    def set_ending_color(self):
+        text = self.sender().text()
+        self.grapher.set_ending_color(text)
     
     def createActions(self):
         self.genAct = QtGui.QAction("&Generate", self)
@@ -173,6 +199,24 @@ class Window(QtGui.QMainWindow):
         self.start_purple = QtGui.QAction('Purple', self)
         self.start_purple.triggered.connect(self.set_starting_color)
 
+
+        self.end_black = QtGui.QAction('Black', self)
+        self.end_black.triggered.connect(self.set_ending_color)
+        self.end_white = QtGui.QAction('White', self)
+        self.end_white.triggered.connect(self.set_ending_color)
+        self.end_red = QtGui.QAction('Red', self)
+        self.end_red.triggered.connect(self.set_ending_color)
+        self.end_yellow = QtGui.QAction('Yellow', self)
+        self.end_yellow.triggered.connect(self.set_ending_color)
+        self.end_green = QtGui.QAction('Green', self)
+        self.end_green.triggered.connect(self.set_ending_color)
+        self.end_light_blue = QtGui.QAction('Light Blue', self)
+        self.end_light_blue.triggered.connect(self.set_ending_color)
+        self.end_blue = QtGui.QAction('Blue', self)
+        self.end_blue.triggered.connect(self.set_ending_color)
+        self.end_purple = QtGui.QAction('Purple', self)
+        self.end_purple.triggered.connect(self.set_ending_color)
+
         
     def createMenus(self):
         self.fileMenu = self.menuBar().addMenu("&File")
@@ -188,6 +232,17 @@ class Window(QtGui.QMainWindow):
         self.start_color_menu.addAction(self.start_light_blue)
         self.start_color_menu.addAction(self.start_blue)
         self.start_color_menu.addAction(self.start_purple)
+
+        self.end_color_menu = self.menuBar().addMenu('Ending Color')
+
+        self.end_color_menu.addAction(self.end_black)
+        self.end_color_menu.addAction(self.end_white)
+        self.end_color_menu.addAction(self.end_red)
+        self.end_color_menu.addAction(self.end_yellow)
+        self.end_color_menu.addAction(self.end_green)
+        self.end_color_menu.addAction(self.end_light_blue)
+        self.end_color_menu.addAction(self.end_blue)
+        self.end_color_menu.addAction(self.end_purple)
         
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
