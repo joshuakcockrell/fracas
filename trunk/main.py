@@ -1,34 +1,19 @@
 import sys
 
 from PySide import QtCore, QtGui
+from tools import add_color_diff, color_diff
 
 class Grapher(QtGui.QWidget):
     def __init__(self, parent = None):
         super(Grapher, self).__init__()
         
         self.generate = False
-
-        self.black_color = (0, 0, 0)
-        self.white_color = (255, 255, 255)
-        self.red_color = (255, 0, 0)
-        self.yellow_color = (255, 255, 0)
-        self.green_color = (0, 255, 0)
-        self.light_blue_color = (0, 255, 255)
-        self.blue_color = (0, 0, 255)
-        self.purple_color = (255, 0, 255)
-
-        self.starting_color = self.black_color
-        self.mid_color = self.red_color
-        self.ending_color = self.white_color
-        self.mid_color_difference = (self.mid_color[0] - self.starting_color[0],
-                                     self.mid_color[1] - self.starting_color[1],
-                                     self.mid_color[2] - self.starting_color[2])
-        
-        self.end_color_difference = (self.ending_color[0] - self.mid_color[0],
-                                     self.ending_color[1] - self.mid_color[1],
-                                     self.ending_color[2] - self.mid_color[2])
-
-                                    
+        self.fractal_color = QtGui.QColor(0, 0, 0)
+        self.outer_color = QtGui.QColor(0, 0, 0)
+        self.middle_color = QtGui.QColor(255, 0, 0)
+        self.inner_color = QtGui.QColor(255, 255, 255)
+        self.mid_color_diff = color_diff(self.middle_color, self.outer_color)
+        self.inner_color_diff = color_diff(self.inner_color, self.middle_color)
         
         # The bounds of the complex plane that is being viewed.
         # comp_y_max, or the upper imaginary-axis bound, is dynamically generated
@@ -38,80 +23,39 @@ class Grapher(QtGui.QWidget):
         self.comp_y_min = -1.2
         
         # The number of iterations to run through the mandelbrot algorithm.
-        self.iteration = 100
-
-    def set_starting_color(self, color):
-        if color == 'Black':
-            self.starting_color = self.black_color
-        elif color == 'White':
-            self.starting_color = self.white_color
-        elif color == 'Red':
-            self.starting_color = self.red_color
-        elif color == 'Blue':
-            self.starting_color = self.blue_color
-
-        self.mid_color_difference = (self.mid_color[0] - self.starting_color[0],
-                                     self.mid_color[1] - self.starting_color[1],
-                                     self.mid_color[2] - self.starting_color[2])
-
-    def set_mid_color(self, color):
-        if color == 'Black':
-            self.mid_color = self.black_color
-        elif color == 'White':
-            self.mid_color = self.white_color
-        elif color == 'Red':
-            self.mid_color = self.red_color
-        elif color == 'Blue':
-            self.mid_color = self.blue_color
-
-        self.mid_color_difference = (self.mid_color[0] - self.starting_color[0],
-                                     self.mid_color[1] - self.starting_color[1],
-                                     self.mid_color[2] - self.starting_color[2])
-
-        self.end_color_difference = (self.ending_color[0] - self.mid_color[0],
-                                     self.ending_color[1] - self.mid_color[1],
-                                     self.ending_color[2] - self.mid_color[2])
-    def set_ending_color(self, color):
-        if color == 'Black':
-            self.ending_color = self.black_color
-        elif color == 'White':
-            self.ending_color = self.white_color
-        elif color == 'Red':
-            self.ending_color = self.red_color
-        elif color == 'Blue':
-            self.ending_color = self.blue_color
-
-        self.end_color_difference = (self.ending_color[0] - self.mid_color[0],
-                                     self.ending_color[1] - self.mid_color[1],
-                                     self.ending_color[2] - self.mid_color[2])
-                                     
-    def set_color(self, color_percent, destination_color, painter):
-
-        if destination_color == 'mid':
-            red_value = int((self.mid_color_difference[0] * color_percent) + self.starting_color[0])
-            green_value = int((self.mid_color_difference[1] * color_percent) + self.starting_color[1])
-            blue_value = int((self.mid_color_difference[2] * color_percent) + self.starting_color[2])
-            painter.setPen(QtGui.QColor(red_value, green_value, blue_value))
-
-        elif destination_color == 'end':
-            red_value = int((self.end_color_difference[0] * color_percent) + self.mid_color[0])
-            green_value = int((self.end_color_difference[1] * color_percent) + self.mid_color[1])
-            blue_value = int((self.end_color_difference[2] * color_percent) + self.mid_color[2])
-            painter.setPen(QtGui.QColor(red_value, green_value, blue_value))
-
+        self.iteration = 70
+    
+    def setOuterColor(self, color):
+        self.outer_color = color
+    
+    def setMiddleColor(self, color):
+        self.middle_color = color
+        self.mid_color_diff = color_diff(self.middle_color, self.outer_color)
+        self.inner_color_diff = color_diff(self.inner_color, self.middle_color)
+    
+    def setInnerColor(self, color):
+        self.inner_color = color
+        self.inner_color_diff = color_diff(self.inner_color, self.middle_color)
+        
+    def setFractalColor(self, color):
+        self.fractal_color = color
+        
     def generateMandelbrot(self):
+        window.setFixedSize(window.size())
         self.image = QtGui.QImage(self.size(), QtGui.QImage.Format_RGB32)
         painter = QtGui.QPainter(self.image)
         self.comp_y_max = self.comp_y_min + float(self.comp_x_max - self.comp_x_min) * self.height() / self.width()
         # Part of the linear interpolation formula generated here to save processing time.
         self.real_lerp = float(self.comp_x_max - self.comp_x_min)/self.width()
         self.img_lerp = float(self.comp_y_max - self.comp_y_min)/self.height()
+        loading_percent = self.width() / 100
+        window.statusBar().addWidget(window.progressBar, 1)
         print "Generating Fractal..."
         for x in range(self.width()):
             for y in range(self.height()):
                 i = self.point_is_in_set(x, y)
                 if i == self.iteration: # if the point remained bounded for every iteration
-                    painter.setPen(QtCore.Qt.black)
+                    painter.setPen(self.fractal_color)
                 
                 # Escape-time coloring.
                 # Color goes from black to {color} for the first slice of the iterations
@@ -119,19 +63,22 @@ class Grapher(QtGui.QWidget):
                 else:
                     slice = self.iteration * 0.5
                     if i < slice:
-                        color_percent = float(i) / slice
-                        destination_color = 'mid'
-                        self.set_color(color_percent, destination_color, painter)
+                        percent = float(i) / slice
+                        rgb = add_color_diff(self.mid_color_diff, self.outer_color, percent)
+                        painter.setPen(QtGui.QColor(rgb))
                     else:
-                        color_percent = (i - slice)/(self.iteration - slice)
-                        destination_color = 'end'
-                        self.set_color(color_percent, destination_color, painter)
+                        percent = (i - slice)/(self.iteration - slice)
+                        rgb = add_color_diff(self.inner_color_diff, self.middle_color, percent)
+                        painter.setPen(QtGui.QColor(rgb))
                 painter.drawPoint(x, y)
-            if x % 100 == 0: #temporary loading indicator
-                loading = "{0}%".format(int(round(float(x) / self.width() * 100)))
-                print loading
+            if x % loading_percent == 0: #temporary loading indicator
+                # loading = "{0}%".format(x / loading_percent)
+                loading = x / loading_percent
+                window.progressBar.setValue(loading)
         self.generate = True
         print "Done!"
+        window.statusBar().removeWidget(window.progressBar)
+        window.statusBar().showMessage("Done!")
         self.update()
     
     # Mandelbrot algorithm that checks whether a certain point is in the set
@@ -161,90 +108,95 @@ class Grapher(QtGui.QWidget):
         
         else:
             painter.setPen(QtCore.Qt.white)
-            painter.setFont(QtGui.QFont("Arial", 30, 100))
+            painter.setFont(QtGui.QFont("Arial", window.width()/25, 100))
             painter.fillRect(self.rect(), QtCore.Qt.black)
             painter.drawText(self.rect(), QtCore.Qt.AlignCenter, "Ready to generate Mandelbrot")    
 
 class Window(QtGui.QMainWindow):
     def __init__(self):
         super(Window, self).__init__()
-        self.setFixedSize(1250, 1000)
+        self.resize(800, 700)
         self.setWindowTitle("fracas")
         self.grapher = Grapher(self)
         self.setCentralWidget(self.grapher)
         self.createActions()
         self.createMenus()
-
-    def set_starting_color(self):
-        text = self.sender().text()
-        self.grapher.set_starting_color(text)
-
-    def set_mid_color(self):
-        text = self.sender().text()
-        self.grapher.set_mid_color(text)
-
-    def set_ending_color(self):
-        text = self.sender().text()
-        self.grapher.set_ending_color(text)
+        self.progressBar = QtGui.QProgressBar()
+        self.progressBar.setFormat("")
+        self.statusBar().showMessage("Ready")
+      
+    def setColor(self):
+        sender = self.sender()
+        if sender.data() == "outer":
+            color = QtGui.QColorDialog.getColor(self.grapher.outer_color, self)
+            if color.isValid():
+                self.grapher.setOuterColor(color)
+                self.icon_color(self.outer_pix, color)
+                self.outerColorAct.setIcon(self.outer_pix)
+        
+        elif sender.data() == "middle":
+            color = QtGui.QColorDialog.getColor(self.grapher.middle_color, self)
+            if color.isValid():
+                self.grapher.setMiddleColor(color)
+                self.icon_color(self.middle_pix, color)
+                self.middleColorAct.setIcon(self.middle_pix)
+        
+        elif sender.data() == "inner":
+            color = QtGui.QColorDialog.getColor(self.grapher.inner_color, self)
+            if color.isValid():
+                self.grapher.setInnerColor(color)
+                self.icon_color(self.inner_pix, color)
+                self.innerColorAct.setIcon(self.inner_pix)
+        
+        elif sender.data() == "fractal":
+            color = QtGui.QColorDialog.getColor(self.grapher.fractal_color, self)
+            if color.isValid():
+                self.grapher.setFractalColor(color)
+                self.icon_color(self.fractal_pix, color)
+                self.fractalColorAct.setIcon(self.fractal_pix)
     
+        
     def createActions(self):
         self.genAct = QtGui.QAction("&Generate", self)
         self.genAct.triggered.connect(self.grapher.generateMandelbrot)
-
-        self.start_black = QtGui.QAction('Black', self)
-        self.start_black.triggered.connect(self.set_starting_color)
-        self.start_white = QtGui.QAction('White', self)
-        self.start_white.triggered.connect(self.set_starting_color)
-        self.start_red = QtGui.QAction('Red', self)
-        self.start_red.triggered.connect(self.set_starting_color)
-        self.start_blue = QtGui.QAction('Blue', self)
-        self.start_blue.triggered.connect(self.set_starting_color)
-
-        self.mid_black = QtGui.QAction('Black', self)
-        self.mid_black.triggered.connect(self.set_mid_color)
-        self.mid_white = QtGui.QAction('White', self)
-        self.mid_white.triggered.connect(self.set_mid_color)
-        self.mid_red = QtGui.QAction('Red', self)
-        self.mid_red.triggered.connect(self.set_mid_color)
-        self.mid_blue = QtGui.QAction('Blue', self)
-        self.mid_blue.triggered.connect(self.set_mid_color)
-
-        self.end_black = QtGui.QAction('Black', self)
-        self.end_black.triggered.connect(self.set_ending_color)
-        self.end_white = QtGui.QAction('White', self)
-        self.end_white.triggered.connect(self.set_ending_color)
-        self.end_red = QtGui.QAction('Red', self)
-        self.end_red.triggered.connect(self.set_ending_color)
-        self.end_blue = QtGui.QAction('Blue', self)
-        self.end_blue.triggered.connect(self.set_ending_color)
-
         
+        self.i_painter = QtGui.QPainter()
+        self.outer_pix = QtGui.QPixmap(self.size())
+        self.middle_pix = QtGui.QPixmap(self.size())
+        self.inner_pix = QtGui.QPixmap(self.size())
+        self.fractal_pix = QtGui.QPixmap(self.size())
+        
+        self.icon_color(self.outer_pix, self.grapher.outer_color)
+        self.icon_color(self.middle_pix, self.grapher.middle_color)
+        self.icon_color(self.inner_pix, self.grapher.inner_color)
+        self.icon_color(self.fractal_pix, self.grapher.fractal_color)
+        
+        self.outerColorAct = QtGui.QAction(self.outer_pix, 'Outer Color', self, triggered=self.setColor)
+        self.outerColorAct.setData("outer")
+        self.middleColorAct = QtGui.QAction(self.middle_pix, 'Middle Color', self, triggered=self.setColor)
+        self.middleColorAct.setData("middle")
+        self.innerColorAct = QtGui.QAction(self.inner_pix, 'Inner Color', self, triggered=self.setColor)
+        self.innerColorAct.setData("inner")
+        self.fractalColorAct = QtGui.QAction(self.fractal_pix, 'Fractal Color', self, triggered=self.setColor)
+        self.fractalColorAct.setData("fractal")
+
     def createMenus(self):
         self.fileMenu = self.menuBar().addMenu("&File")
         self.fileMenu.addAction(self.genAct)
 
-        self.start_color_menu = self.menuBar().addMenu('Starting Color')
+        self.start_color_menu = self.menuBar().addMenu('Colors')
 
-        self.start_color_menu.addAction(self.start_black)
-        self.start_color_menu.addAction(self.start_white)
-        self.start_color_menu.addAction(self.start_red)
-        self.start_color_menu.addAction(self.start_blue)
+        self.start_color_menu.addAction(self.outerColorAct)
+        self.start_color_menu.addAction(self.middleColorAct)
+        self.start_color_menu.addAction(self.innerColorAct)
+        self.start_color_menu.addAction(self.fractalColorAct)
+    
+    def icon_color(self, pix, color):
+        self.i_painter.begin(pix)
+        self.i_painter.fillRect(self.rect(), color)
+        self.i_painter.end() 
 
-        self.mid_color_menu = self.menuBar().addMenu('Middle Color')
-        self.mid_color_menu.addAction(self.mid_black)
-        self.mid_color_menu.addAction(self.mid_white)
-        self.mid_color_menu.addAction(self.mid_red)
-        self.mid_color_menu.addAction(self.mid_blue)
-
-        self.end_color_menu = self.menuBar().addMenu('Ending Color')
-
-        self.end_color_menu.addAction(self.end_black)
-        self.end_color_menu.addAction(self.end_white)
-        self.end_color_menu.addAction(self.end_red)
-        self.end_color_menu.addAction(self.end_blue)
-
-        
-        
+             
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     window = Window()
