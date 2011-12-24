@@ -27,6 +27,7 @@ class Grapher(QtGui.QWidget):
     
     def setOuterColor(self, color):
         self.outer_color = color
+        self.mid_color_diff = color_diff(self.middle_color, self.outer_color)
     
     def setMiddleColor(self, color):
         self.middle_color = color
@@ -50,6 +51,7 @@ class Grapher(QtGui.QWidget):
         self.img_lerp = float(self.comp_y_max - self.comp_y_min)/self.height()
         loading_percent = self.width() / 100
         window.statusBar().addWidget(window.progressBar, 1)
+        window.progressBar.show()
         print "Generating Fractal..."
         for x in range(self.width()):
             for y in range(self.height()):
